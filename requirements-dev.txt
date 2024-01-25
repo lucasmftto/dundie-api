@@ -7,3 +7,22 @@ pytest-order    # ordenação de testes
 httpx           # requests async para testes
 black           # auto formatação
 flake8          # linter
+fastapi                    # Web Framework
+uvicorn                    # ASGI Server
+sqlalchemy                 # ORM
+sqlalchemy2-stubs           # type hints
+sqlmodel                   # ORM
+dynaconf                   # configuração
+fastapi                    # Web Framework
+uvicorn                    # ASGI Server
+sqlmodel                   # Database ORM
+typer                      # CLI Framework
+dynaconf                   # Config Management
+jinja2                     # Templating
+python-jose[cryptography]  # Encrypt
+passlib[bcrypt]            # Hashing
+python-multipart           # Form processing
+psycopg2-binary            # Database Driver
+alembic                    # Database Migrations
+rich                       # Terminal formatting
+fastapi-pagination         # Pagination
