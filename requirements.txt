@@ -50,7 +50,7 @@ mdurl==0.1.2
     # via markdown-it-py
 passlib[bcrypt]==1.7.4
     # via -r requirements.in
-psycopg2-binary==2.9.5
+psycopg2-binary
     # via -r requirements.in
 pyasn1==0.4.8
     # via
