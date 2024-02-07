@@ -17,7 +17,6 @@ from dundie.security import verify_password
 SECRET_KEY = settings.security.secret_key  # pyright: ignore
 ALGORITHM = settings.security.algorithm  # pyright: ignore
 
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
@@ -42,9 +41,9 @@ class TokenData(BaseModel):
 
 
 def create_access_token(
-    data: dict,
-    expires_delta: Optional[timedelta] = None,
-    scope: str = "access_token",
+        data: dict,
+        expires_delta: Optional[timedelta] = None,
+        scope: str = "access_token",
 ) -> str:
     """Creates a JWT Token from user data
 
@@ -68,7 +67,7 @@ create_refresh_token = partial(create_access_token, scope="refresh_token")
 
 
 def authenticate_user(
-    get_user: Callable, username: str, password: str
+        get_user: Callable, username: str, password: str
 ) -> Union[User, bool]:
     """Authenticate the user"""
     user = get_user(username)
@@ -87,9 +86,9 @@ def get_user(username) -> Optional[User]:
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    request: Request = None,  # pyright: ignore
-    fresh=False
+        token: str = Depends(oauth2_scheme),
+        request: Request = None,  # pyright: ignore
+        fresh=False
 ) -> User:
     """Get current user authenticated"""
     credentials_exception = HTTPException(
@@ -130,7 +129,7 @@ def get_current_user(
 # FastAPI dependencies
 
 async def get_current_active_user(
-    current_user: User = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
 ) -> User:
     """Wraps the sync get_active_user for sync calls"""
     return current_user
@@ -140,7 +139,7 @@ AuthenticatedUser = Depends(get_current_active_user)
 
 
 async def get_current_super_user(
-    current_user: User = Depends(get_current_user),
+        current_user: User = Depends(get_current_user),
 ) -> User:
     if not current_user.superuser:
         raise HTTPException(
@@ -152,8 +151,50 @@ async def get_current_super_user(
 SuperUser = Depends(get_current_super_user)
 
 
-
 async def validate_token(token: str = Depends(oauth2_scheme)) -> User:
     """Validates user token"""
     user = get_current_user(token=token)
     return user
+
+
+async def get_user_if_change_password_is_allowed(
+    *,
+    request: Request,
+    pwd_reset_token: Optional[str] = None,  # from path?pwd_reset_token=xxxx
+    username: str,  # from /path/{username}
+) -> User:
+    """Returns User if one of the conditions is met.
+    1. There is a pwd_reset_token passed as query parameter and it is valid OR
+    2. authenticated_user is supersuser OR
+    3. authenticated_user is User
+    """
+    target_user = get_user(username)  # The user we want to change the password
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    try:
+        valid_pwd_reset_token = get_current_user(token=pwd_reset_token or "") == target_user
+    except HTTPException:
+        valid_pwd_reset_token = False
+
+    try:
+        authenticated_user = get_current_user(token="", request=request)
+    except HTTPException:
+        authenticated_user = None
+
+    if any(
+        [
+            valid_pwd_reset_token,
+            authenticated_user and authenticated_user.superuser,
+            authenticated_user and authenticated_user.id == target_user.id,
+        ]
+    ):
+        return target_user
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="You are not allowed to change this user's password",
+    )
+
+
+CanChangeUserPassword = Depends(get_user_if_change_password_is_allowed)
