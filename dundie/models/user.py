@@ -1,11 +1,13 @@
 """User related data models"""
-from typing import Optional
-from sqlmodel import Field, SQLModel
+from typing import Optional, TYPE_CHECKING
+from sqlmodel import Field, SQLModel, Relationship
 from dundie.security import HashedPassword
 from pydantic import BaseModel, root_validator
 from dundie.security import get_password_hash
 from fastapi import HTTPException, status
 
+if TYPE_CHECKING:
+    from dundie.models.transaction import Transaction, Balance
 
 class User(SQLModel, table=True):
     """Represents the User Model"""
@@ -25,6 +27,28 @@ class User(SQLModel, table=True):
         """"Users belonging to management dept are admins."""
         return self.dept == "management"
 
+    # Populates a `.user` on `Transaction`
+    incomes: Optional[list["Transaction"]] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"primaryjoin": 'User.id == Transaction.user_id'},
+    )
+    # Populates a `.from_user` on `Transaction`
+    expenses: Optional[list["Transaction"]] = Relationship(
+        back_populates="from_user",
+        sa_relationship_kwargs={"primaryjoin": 'User.id == Transaction.from_id'},
+    )
+    # Populates a `.user` on `Balance`
+    _balance: Optional["Balance"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"lazy": "dynamic"}
+    )
+
+    @property
+    def balance(self) -> int:
+        """Returns the current balance of the user"""
+        if (user_balance := self._balance.first()) is not None:  # pyright: ignore
+            return user_balance.value
+        return 0
 
 def generate_username(name: str) -> str:
     """Generates a slug username from a name"""
