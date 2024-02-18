@@ -158,10 +158,10 @@ async def validate_token(token: str = Depends(oauth2_scheme)) -> User:
 
 
 async def get_user_if_change_password_is_allowed(
-    *,
-    request: Request,
-    pwd_reset_token: Optional[str] = None,  # from path?pwd_reset_token=xxxx
-    username: str,  # from /path/{username}
+        *,
+        request: Request,
+        pwd_reset_token: Optional[str] = None,  # from path?pwd_reset_token=xxxx
+        username: str,  # from /path/{username}
 ) -> User:
     """Returns User if one of the conditions is met.
     1. There is a pwd_reset_token passed as query parameter and it is valid OR
@@ -183,11 +183,11 @@ async def get_user_if_change_password_is_allowed(
         authenticated_user = None
 
     if any(
-        [
-            valid_pwd_reset_token,
-            authenticated_user and authenticated_user.superuser,
-            authenticated_user and authenticated_user.id == target_user.id,
-        ]
+            [
+                valid_pwd_reset_token,
+                authenticated_user and authenticated_user.superuser,
+                authenticated_user and authenticated_user.id == target_user.id,
+            ]
     ):
         return target_user
 
@@ -198,3 +198,38 @@ async def get_user_if_change_password_is_allowed(
 
 
 CanChangeUserPassword = Depends(get_user_if_change_password_is_allowed)
+
+
+async def show_balance_field(
+        *,
+        request: Request,
+        show_balance: Optional[bool] = False,  # from /user/?show_balance=true
+) -> bool:
+    """Returns True if one of the conditions is met.
+    1. show_balance is True AND
+    2. authenticated_user.superuser OR
+    3. authenticated_user.username == username
+    """
+    if not show_balance:
+        return False
+
+    username = request.path_params.get("username")
+
+    try:
+        authenticated_user = get_current_user(token="", request=request)
+    except HTTPException:
+        authenticated_user = None
+
+    if any(
+            [
+                authenticated_user and authenticated_user.superuser,
+                authenticated_user and authenticated_user.username == username,
+            ]
+    ):
+        print(authenticated_user)
+        return True
+
+    return False
+
+
+ShowBalanceField = Depends(show_balance_field)
