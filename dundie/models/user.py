@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 if TYPE_CHECKING:
     from dundie.models.transaction import Transaction, Balance
 
+
 class User(SQLModel, table=True):
     """Represents the User Model"""
 
@@ -50,6 +51,7 @@ class User(SQLModel, table=True):
             return user_balance.value
         return 0
 
+
 def generate_username(name: str) -> str:
     """Generates a slug username from a name"""
     return name.lower().replace(" ", "-")
@@ -64,6 +66,17 @@ class UserResponse(BaseModel):
     avatar: Optional[str] = None
     bio: Optional[str] = None
     currency: str
+
+
+class UserResponseWithBalance(UserResponse):
+    balance: Optional[int] = None
+
+    @root_validator(pre=True)
+    def set_balance(cls, values: dict):
+        """Sets the balance of the user"""
+        instance = values["_sa_instance_state"].object
+        values["balance"] = instance.balance
+        return values
 
 
 class UserRequest(BaseModel):
