@@ -97,3 +97,7 @@ typing-extensions==4.8.0
     #   starlette
 uvicorn==0.20.0
     # via -r requirements.in
+
+pytest          # execução de testes
+pytest-order    # ordenação de testes
+httpx==0.26.0

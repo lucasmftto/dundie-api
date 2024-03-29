@@ -11,3 +11,6 @@ psycopg2-binary            # Database Driver
 alembic                    # Database Migrations
 rich                       # Terminal formatting
 fastapi-pagination         # Pagination
+pytest                     # execução de testes
+pytest-order               # ordenação de testes
+httpx==0.26.0
